@@ -1,0 +1,12 @@
+[package]
+name = "r-slam"
+version = "0.1.0"
+edition = "2024"
+
+
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[dependencies]
+bevy = "0.16.1"

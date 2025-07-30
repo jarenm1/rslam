@@ -1,0 +1,13 @@
+[package]
+name = "visual-odometry"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+image = "0.25.6"
+opencv = { version = "0.95.1", features = ["features2d"] }
+thiserror = "2.0.12"
+tracing = "0.1.41"
+
+[dev-dependencies]
+approx = "0.5.1"
