@@ -20,7 +20,6 @@ pub struct VisualOdometry {
     config: ORBConfig,
     orb: Ptr<ORB>,
     matcher: Ptr<BFMatcher>,
-    previous_frame: Option<Frame>,
     frame_id: usize,
 }
 
@@ -84,11 +83,11 @@ impl VisualOdometry {
             config,
             orb,
             matcher,
-            previous_frame: None,
             frame_id: 0,
         })
     }
 
+    #[inline]
     pub fn process_frame(&mut self, image: Mat) -> Result<Frame, OdometryError> {
         let mut keypoints: Vector<opencv::core::KeyPoint> = Vector::new();
         let mut descriptors = Mat::default();
@@ -99,37 +98,24 @@ impl VisualOdometry {
         Ok(Frame::new(self.frame_id, image, keypoints, descriptors))
     }
 
-    pub fn frame_match(&mut self, frame: Frame) -> Result<Vector<DMatch>, OdometryError> {
+    #[inline]
+    pub fn frame_match(
+        self,
+        frame1: Frame,
+        frame2: Frame,
+    ) -> Result<Vector<DMatch>, OdometryError> {
         let mut matches = Vector::new();
-
-        if let Some(previous) = &self.previous_frame {
-            println!("previous frame found!");
-
-            // YOU FUCKING HAVE TO USE TRAIN MATCH BTW. FOUND THIS SHIT IN A GITHUB ISSUE THREAD.
-            self.matcher
-                .train_match(
-                    &previous.descriptors.clone(),
-                    &frame.descriptors.clone(),
-                    &mut matches,
-                    &no_array(),
-                )
-                .unwrap();
-
-            let prev = previous;
-            let mut out_img = Mat::default();
-            draw_matches_def(
-                &prev.image,
-                &prev.keypoints,
-                &frame.image,
-                &frame.keypoints,
-                &matches,
-                &mut out_img,
-            )?;
-            opencv::imgcodecs::imwrite("output.jpg", &out_img, &Vector::new()).unwrap();
-        }
+        // YOU FUCKING HAVE TO USE TRAIN MATCH BTW. FOUND THIS SHIT IN A GITHUB ISSUE.
+        self.matcher
+            .train_match(
+                &frame1.descriptors.clone(),
+                &frame2.descriptors.clone(),
+                &mut matches,
+                &no_array(),
+            )
+            .unwrap();
 
         println!("match len: {}", matches.len());
-        self.previous_frame = Some(frame);
 
         Ok(matches)
     }

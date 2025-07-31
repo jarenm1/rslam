@@ -1,16 +1,27 @@
 use bevy::prelude::*;
+use nokhwa::NokhwaError;
+use nokhwa::utils::CameraInfo;
 use opencv::prelude::*;
 use opencv::videoio::VideoCapture;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-struct CameraFeedPlugin {
+mod init;
+
+/// Platform Notes:
+///
+/// Linux: Ensure your user has permission to access /dev/video* (add user to the video group).
+/// Windows: nokhwa uses UVC or DirectShow; ensure drivers are installed.
+/// macOS: nokhwa uses AVFoundation; you may need to grant camera permissions.
+pub struct CameraFeedPlugin {
     device_index: i32,
     resolution: (f64, f64),
     fps: f64,
 }
 impl Plugin for CameraFeedPlugin {
     fn build(&self, app: &mut App) {
+        nokhwa::nokhwa_initialize(|_| {});
+
         let mut capture =
             opencv::videoio::VideoCapture::new(self.device_index, opencv::videoio::CAP_ANY)
                 .unwrap();
@@ -39,6 +50,17 @@ impl Plugin for CameraFeedPlugin {
         })
         .add_systems(Startup, setup_camera)
         .add_systems(Update, update_camera_feed);
+    }
+}
+
+impl CameraFeedPlugin {
+    // We want the app to hang until a camera is chosen.
+    pub fn select_camera(&mut self, selection: i32) {
+        self.device_index = selection;
+    }
+    pub fn list_cameras() -> Result<Vec<CameraInfo>, NokhwaError> {
+        let cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)?;
+        Ok(cameras)
     }
 }
 

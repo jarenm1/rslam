@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 bevy = "0.16.1"
+nokhwa = "0.10.9"
 opencv = { version = "0.95.1", features = ["video", "videoio"] }

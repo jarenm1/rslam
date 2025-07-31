@@ -8,6 +8,7 @@ pub struct Frame {
 }
 
 impl Frame {
+    /// Frames should not be changed after creation. Assume immutable.
     pub fn new(id: usize, image: Mat, keypoints: Vector<KeyPoint>, descriptors: Mat) -> Self {
         Self {
             id,
