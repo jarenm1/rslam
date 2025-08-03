@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 image = "0.25.6"
 opencv = { version = "0.95.1", features = ["features2d"] }
+serde = "1.0.219"
+serde_yaml = "0.9.34"
 thiserror = "2.0.12"
 tracing = "0.1.41"
 

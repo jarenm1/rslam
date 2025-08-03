@@ -1,6 +1,6 @@
 use opencv::{
     Error as CvError,
-    core::{Mat, Point2f, Size, TermCriteria, TermCriteria_Type, Vector},
+    core::{CV_64F, Mat, Point2f, Size, Vector, no_array},
     prelude::*,
 };
 
@@ -23,28 +23,36 @@ pub struct Camera {
     pub cx: f64,
     pub cy: f64,
     pub camera_matrix: Mat,
-    pub distortion_coeffs: Mat,
+    pub distortion_coeffs: Vector<f64>,
     window_size: Size,
 }
 
 impl Camera {
+    // unsafe, look for alternatives, but should be fine.
     pub fn new(
-        fx: f64,
-        fy: f64,
-        cx: f64,
-        cy: f64,
+        camera_matrix: Mat,
+        distortion_coeffs: Vector<f64>,
         width: i32,
         height: i32,
     ) -> Result<Self, CameraError> {
-        let camera_matrix = Mat::from_slice_2d(&[[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]])?;
+        if camera_matrix.typ() != CV_64F {
+            return Err(CameraError::InvalidIntrinsics(
+                "Expected CV_64F".to_string(),
+            ));
+        }
+        if camera_matrix.size()? != Size::new(3, 3) {
+            return Err(CameraError::InvalidIntrinsics(
+                "Camera Matrix is invalid size. Expected 3x3.".to_string(),
+            ));
+        }
         Ok(Self {
-            fx,
-            fy,
-            cx,
-            cy,
+            fx: *camera_matrix.at_2d(0, 0)?,
+            fy: *camera_matrix.at_2d(1, 1)?,
+            cx: *camera_matrix.at_2d(0, 2)?,
+            cy: *camera_matrix.at_2d(1, 2)?,
+            distortion_coeffs,
             camera_matrix,
-            distortion_coeffs: Mat::default(),
-            window_size: Size { width, height },
+            window_size: Size::new(width, height),
         })
     }
 
@@ -55,35 +63,9 @@ impl Camera {
             &mut undistorted_points,
             &self.camera_matrix,
             &self.distortion_coeffs,
-            &Mat::default(),
-            &Mat::default(),
+            &no_array(),
+            &no_array(),
         )?;
         Ok(undistorted_points)
-    }
-}
-
-impl Default for Camera {
-    /// Creates a default camera configuration for testing.
-    ///
-    /// These are the default values:
-    /// - `fx`: 554.3827
-    /// - `fy`: 554.3827
-    /// - `cx`: 320.0
-    /// - `cy`: 240.0
-    /// - `width`: 640
-    /// - `height`: 480
-    fn default() -> Self {
-        let (fx, fy, cx, cy, width, height) = (554.3827, 554.3827, 320.0, 240.0, 640, 480);
-        let camera_matrix =
-            Mat::from_slice_2d(&[[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]).unwrap();
-        Self {
-            fx,
-            fy,
-            cx,
-            cy,
-            camera_matrix,
-            distortion_coeffs: Mat::default(),
-            window_size: Size { width, height },
-        }
     }
 }

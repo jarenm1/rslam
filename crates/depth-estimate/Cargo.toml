@@ -1,0 +1,30 @@
+[package]
+name = "depth-estimate"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+opencv = { version = "0.95.1", features = ["features2d"] }
+ort = "2.0.0-rc.10"
+thiserror = "2.0.12"
+tracing = "0.1.41"
+nalgebra = "0.34.0"
+
+
+[features]
+default = []
+
+
+cuda = ["ort/cuda"]
+tensorrt = ["ort/tensorrt"]
+directml = ["ort/directml"]
+openvino = ["ort/openvino"]
+onednn = ["ort/onednn"]
+rocm = ["ort/rocm"]
+
+nvidia = ["cuda", "tensorrt"]
+amd = ["rocm"]
+intel = ["openvino", "onednn"]
+all-backends = ["cuda", "tensorrt", "directml", "openvino", "onednn", "rocm"]
+
+dev = ["cuda"]
