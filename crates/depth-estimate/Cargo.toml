@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-opencv = { version = "0.95.1", features = ["features2d"] }
-ort = "2.0.0-rc.10"
+opencv = { version = "0.95.1", features = ["features2d", "imgcodecs"] }
+ort = { version = "2.0.0-rc.10" }
 thiserror = "2.0.12"
 tracing = "0.1.41"
 nalgebra = "0.34.0"
@@ -13,7 +13,6 @@ nalgebra = "0.34.0"
 
 [features]
 default = []
-
 
 cuda = ["ort/cuda"]
 tensorrt = ["ort/tensorrt"]
@@ -28,3 +27,6 @@ intel = ["openvino", "onednn"]
 all-backends = ["cuda", "tensorrt", "directml", "openvino", "onednn", "rocm"]
 
 dev = ["cuda"]
+
+[[example]]
+name = "simple"
