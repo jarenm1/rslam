@@ -1,8 +1,11 @@
-use std::path::PathBuf;
-
 use depth_estimate::{DepthEstimate, DepthEstimateConfig};
 use opencv::imgcodecs::{self, IMREAD_ANYCOLOR};
-
+use std::path::PathBuf;
+//
+//
+// REQUIRES MIDAS-SMALL ONNX MODEL TO WORK
+//
+//
 fn main() {
     let image = imgcodecs::imread("image1.jpg", IMREAD_ANYCOLOR).unwrap();
 
