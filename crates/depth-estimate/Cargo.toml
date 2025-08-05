@@ -2,14 +2,18 @@
 name = "depth-estimate"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [dependencies]
 opencv = { version = "0.95.1", features = ["features2d", "imgcodecs"] }
-ort = { version = "2.0.0-rc.10" }
+ort = { version = "2.0.0-rc.10", default-features = false, features = [""] }
 thiserror = "2.0.12"
 tracing = "0.1.41"
 nalgebra = "0.34.0"
 
+[build-dependencies]
+vcpkg = "0.2.15"
+pkg-config = "0.3.32"
 
 [features]
 default = []

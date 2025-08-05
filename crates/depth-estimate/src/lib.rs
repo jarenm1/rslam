@@ -6,7 +6,7 @@ use opencv::{
         no_array,
     },
     imgcodecs,
-    imgproc::{self, COLOR_BGR2RGB, COLOR_BGRA2RGB, INTER_AREA}
+    imgproc::{self, COLOR_BGR2RGB, COLOR_BGRA2RGB, INTER_AREA},
 };
 use ort::{
     session::{Session, SessionOutputs, builder::GraphOptimizationLevel},
@@ -125,7 +125,7 @@ fn preprocess_mat_to_ort_tensor(
     let rgb_image = resize_and_pad(input_image, target_height, target_width)?;
 
     let mut float_image = Mat::default();
-    rgb_image.convert_to(&mut float_image, CV_32F, 1.0 / 255.0, 0.0);
+    rgb_image.convert_to(&mut float_image, CV_32F, 1.0 / 255.0, 0.0)?;
 
     let mut normalized_image = Mat::default();
     let mean = opencv::core::Scalar::from_array([0.485, 0.456, 0.406, 0.0]);
