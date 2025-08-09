@@ -1,5 +1,4 @@
 use opencv::core::{Mat, MatExprTraitConst, MatTraitConst};
-use std::error::Error;
 
 #[derive(Debug, thiserror::Error)]
 pub enum TransformError {
@@ -51,7 +50,7 @@ pub fn normalize(
 ) -> Result<Mat, TransformError> {
     use opencv::core::divide2;
     use opencv::core::subtract;
-    use opencv::core::{CV_32F, Mat, Scalar};
+    use opencv::core::{CV_32F, Mat};
 
     let mut float_image = Mat::default();
     image.convert_to(&mut float_image, CV_32F, 1.0 / 255.0, 0.0)?;

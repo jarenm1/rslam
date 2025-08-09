@@ -1,4 +1,4 @@
-use depth_estimate::{DepthEstimate, DepthEstimateConfig, midas::MidasTransform};
+use depth_estimate::{DepthEstimate, DepthEstimateConfig, midas::transforms::MidasTransform};
 use opencv::imgcodecs::{self, IMREAD_ANYCOLOR};
 use std::path::PathBuf;
 //
@@ -17,7 +17,7 @@ fn main() {
     );
     let mut estimate = DepthEstimate::new(
         config,
-        Box::new(midas::MidasTransform {
+        Box::new(MidasTransform {
             target_height: 384,
             target_width: 384,
             mean: opencv::core::Scalar::from_array([0.485, 0.456, 0.406, 0.0]),

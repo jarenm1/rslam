@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-mod midas;
+pub mod midas;
 
 use opencv::{
     core::{CV_32FC1, Mat, Mat_, MatTraitConst, Scalar, Vector, no_array},
@@ -42,10 +42,11 @@ impl DepthEstimate {
     // should be model agnostic in future
     #[inline]
     pub fn estimate(&mut self, image: Mat) -> Result<Mat, EstimateError> {
-        let transformed_image = self
-            .transform
-            .apply(image.clone())
-            .map_err(|e| EstimateError::OrtError(ort::Error::Other(e.to_string())))?;
+        let transformed_image = self.transform.apply(image.clone()).map_err(|e| {
+            EstimateError::TransForm(midas::transforms::TransformError::OpenCV(
+                opencv::Error::new(0, e.to_string()),
+            ))
+        })?;
         let input_tensor_values = preprocess_mat_to_ort_tensor(&transformed_image, 384, 384)?;
 
         let shape = [1, 3, 384, 384];
