@@ -7,6 +7,8 @@ use std::path::PathBuf;
 //
 //
 fn main() {
+    
+    // Takes anycolor ?
     let image = imgcodecs::imread("image1.jpg", IMREAD_ANYCOLOR).unwrap();
 
     let config = DepthEstimateConfig::new(

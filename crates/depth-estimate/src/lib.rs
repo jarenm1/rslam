@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+mod midas;
 
 use opencv::{
     core::{
@@ -21,6 +22,8 @@ pub enum EstimateError {
     OpenCVError(#[from] opencv::Error),
     #[error("Conversion error")]
     ConversionError,
+    #[error("Transforms Error")]
+    TransForm(#[from] midas::transforms::TransformError),
 }
 
 pub struct DepthEstimate {
@@ -38,7 +41,6 @@ impl DepthEstimate {
     // should be model agnostic in future
     #[inline]
     pub fn estimate(&mut self, image: Mat) -> Result<Mat, EstimateError> {
-        // TODO: move resizing logic
         let input_tensor_values = preprocess_mat_to_ort_tensor(&image, 384, 384)?;
 
         let shape = [1, 3, 384, 384];
@@ -69,11 +71,11 @@ impl DepthEstimateConfig {
     }
 }
 
-fn resize_and_pad(
+fn preprocess_mat_to_ort_tensor(
     input_image: &Mat,
     target_height: i32,
     target_width: i32,
-) -> Result<Mat, EstimateError> {
+) -> Result<Vec<f32>, EstimateError> {
     let mut rgb_image = Mat::default();
     match input_image.channels() {
         4 => {
@@ -87,57 +89,24 @@ fn resize_and_pad(
 
     let original_height = rgb_image.rows();
     let original_width = rgb_image.cols();
-
     let aspect_ratio = original_width as f32 / original_height as f32;
-
     let (new_width, new_height) = if aspect_ratio > 1.0 {
         (target_width, (target_width as f32 / aspect_ratio) as i32)
     } else {
         ((target_height as f32 * aspect_ratio) as i32, target_height)
     };
 
-    let mut resized_image = Mat::default();
-    imgproc::resize(
-        &rgb_image,
-        &mut resized_image,
-        Size::new(new_width, new_height),
-        0.0,
-        0.0,
-        INTER_AREA,
-    )?;
+    let resized_image = midas::transforms::resize_image(rgb_image, new_height, new_width)?;
+    let padded_image = midas::transforms::pad_image(resized_image, target_height, target_width)?;
 
-    let mut padded_image = Mat::zeros(target_height, target_width, rgb_image.typ())?.to_mat()?;
-
-    let top = (target_height - new_height) / 2;
-    let left = (target_width - new_width) / 2;
-    let roi = opencv::core::Rect::new(left, top, new_width, new_height);
-    let mut roi_mat = Mat::roi_mut(&mut padded_image, roi)?;
-    resized_image.copy_to(&mut roi_mat)?;
-
-    Ok(padded_image)
-}
-
-fn preprocess_mat_to_ort_tensor(
-    input_image: &Mat,
-    target_height: i32,
-    target_width: i32,
-) -> Result<Vec<f32>, EstimateError> {
-    let rgb_image = resize_and_pad(input_image, target_height, target_width)?;
-
-    let mut float_image = Mat::default();
-    rgb_image.convert_to(&mut float_image, CV_32F, 1.0 / 255.0, 0.0)?;
-
-    let mut normalized_image = Mat::default();
     let mean = opencv::core::Scalar::from_array([0.485, 0.456, 0.406, 0.0]);
     let std = opencv::core::Scalar::from_array([0.299, 0.224, 0.225, 0.0]);
-    opencv::core::subtract(&float_image, &mean, &mut normalized_image, &no_array(), -1)?;
-    let mut processed_image = Mat::default();
-    opencv::core::divide2(&normalized_image, &std, &mut processed_image, 1.0, -1)?;
+    let normalized_image = midas::transforms::normalize(padded_image, mean, std)?;
 
     let mut input_tensor_values =
         vec![0.0f32; 1 * 3 * target_height as usize * target_width as usize];
     let mut channels = Vector::<Mat>::new();
-    opencv::core::split(&processed_image, &mut channels)?;
+    opencv::core::split(&normalized_image, &mut channels)?;
 
     let mut index = 0;
     for c in 0..3 {

@@ -1,5 +1,5 @@
 use opencv::{
-    core::{CV_32FC1, CV_64F, Mat, Mat_, Vector},
+    core::{CV_64F, Mat, Mat_, Vector},
     imgcodecs, imgproc,
 };
 use r_slam_common::camera::Camera;
