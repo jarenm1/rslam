@@ -1,4 +1,5 @@
 use opencv::core::{Mat, MatExprTraitConst, MatTraitConst};
+use std::error::Error;
 
 #[derive(Debug, thiserror::Error)]
 pub enum TransformError {
@@ -50,7 +51,7 @@ pub fn normalize(
 ) -> Result<Mat, TransformError> {
     use opencv::core::divide2;
     use opencv::core::subtract;
-    use opencv::core::{CV_32F, Mat};
+    use opencv::core::{CV_32F, Mat, Scalar};
 
     let mut float_image = Mat::default();
     image.convert_to(&mut float_image, CV_32F, 1.0 / 255.0, 0.0)?;
@@ -65,4 +66,23 @@ pub fn normalize(
     let mut processed_image = Mat::default();
     divide2(&normalized_image, &std, &mut processed_image, 1.0, -1)?;
     Ok(processed_image)
+}
+
+pub trait ImageTransform {
+    fn apply(&self, image: Mat) -> Result<Mat, TransformError>;
+}
+
+pub struct MidasTransform {
+    pub target_height: i32,
+    pub target_width: i32,
+    pub mean: opencv::core::Scalar,
+    pub std: opencv::core::Scalar,
+}
+
+impl ImageTransform for MidasTransform {
+    fn apply(&self, image: Mat) -> Result<Mat, TransformError> {
+        let resized = resize_image(image, self.target_height, self.target_width)?;
+        let padded = pad_image(resized, self.target_height, self.target_width)?;
+        normalize(padded, self.mean, self.std)
+    }
 }

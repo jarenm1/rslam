@@ -2,12 +2,9 @@ use std::path::PathBuf;
 mod midas;
 
 use opencv::{
-    core::{
-        CV_32F, CV_32FC1, Mat, Mat_, MatExprTraitConst, MatTraitConst, Scalar, Size, Vector,
-        no_array,
-    },
+    core::{CV_32FC1, Mat, Mat_, MatTraitConst, Scalar, Vector, no_array},
     imgcodecs,
-    imgproc::{self, COLOR_BGR2RGB, COLOR_BGRA2RGB, INTER_AREA},
+    imgproc::{self, COLOR_BGR2RGB, COLOR_BGRA2RGB},
 };
 use ort::{
     session::{Session, SessionOutputs, builder::GraphOptimizationLevel},
@@ -28,20 +25,28 @@ pub enum EstimateError {
 
 pub struct DepthEstimate {
     model: Session,
+    transform: Box<dyn midas::transforms::ImageTransform>,
 }
 
 impl DepthEstimate {
-    pub fn new(config: DepthEstimateConfig) -> Result<Self, EstimateError> {
+    pub fn new(
+        config: DepthEstimateConfig,
+        transform: Box<dyn midas::transforms::ImageTransform>,
+    ) -> Result<Self, EstimateError> {
         let mut model = Session::builder()?
             .with_optimization_level(config.optimization_level)?
             .with_intra_threads(config.intra_threads)?
             .commit_from_file(config.file_path.clone())?;
-        Ok(Self { model })
+        Ok(Self { model, transform })
     }
     // should be model agnostic in future
     #[inline]
     pub fn estimate(&mut self, image: Mat) -> Result<Mat, EstimateError> {
-        let input_tensor_values = preprocess_mat_to_ort_tensor(&image, 384, 384)?;
+        let transformed_image = self
+            .transform
+            .apply(image.clone())
+            .map_err(|e| EstimateError::OrtError(ort::Error::Other(e.to_string())))?;
+        let input_tensor_values = preprocess_mat_to_ort_tensor(&transformed_image, 384, 384)?;
 
         let shape = [1, 3, 384, 384];
         let input_tensor = Value::from_array((shape, input_tensor_values))?;
