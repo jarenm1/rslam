@@ -1,0 +1,8 @@
+[package]
+name = "r-slam-common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+opencv = "0.95.1"
+thiserror = "2.0.12"

@@ -2,7 +2,8 @@ use opencv::{
     core::{CV_32FC1, CV_64F, Mat, Mat_, Vector},
     imgcodecs, imgproc,
 };
-use visual_odometry::{ORBConfig, VisualOdometry, camera::Camera};
+use r_slam_common::camera::Camera;
+use visual_odometry::{ORBConfig, VisualOdometry};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut vo = VisualOdometry::new(ORBConfig::default(), get_camera()?).unwrap();

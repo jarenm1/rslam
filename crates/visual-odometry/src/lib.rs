@@ -4,7 +4,7 @@ use opencv::core::{DMatch, Mat, NORM_HAMMING, Ptr, Scalar, Vector, no_array};
 use opencv::features2d::{BFMatcher, ORB, ORB_ScoreType, draw_matches};
 use opencv::prelude::*;
 
-pub mod camera;
+use r_slam_common::camera;
 mod frame;
 
 #[derive(thiserror::Error, Debug)]
