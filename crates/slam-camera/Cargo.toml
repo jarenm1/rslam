@@ -1,0 +1,7 @@
+[package]
+name = "slam-camera"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+opencv = { version = "0.95.1", features = ["calib3d", "features2d", "flann", "imgcodecs", "imgproc"] }

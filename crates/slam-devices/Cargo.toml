@@ -1,0 +1,11 @@
+[package]
+name = "slam-devices"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.16.1"
+bevy_egui = "0.36.0"
+crossbeam = "0.8.4"
+nokhwa = { version = "0.10.9", features = ["input-native", "output-threaded"] }
+tokio = { version = "1.47.1", features = ["full"] }
