@@ -19,7 +19,6 @@ pub struct OrbDetector {
 }
 
 impl FeatureDetector for OrbDetector {
-    #[inline]
     fn detect_features(&mut self, img: &GrayscaleImage) -> Result<Features, MatchingError> {
         let mut keypoints: Vector<opencv::core::KeyPoint> = Vector::new();
         let mut descriptors = Mat::default();
@@ -44,7 +43,6 @@ pub enum FeatureDetectorModel {
 }
 
 impl FeatureDetector for FeatureDetectorModel {
-    #[inline]
     fn detect_features(&mut self, img: &GrayscaleImage) -> Result<Features, MatchingError> {
         match self {
             FeatureDetectorModel::OrbDetector(detector) => detector.detect_features(img),

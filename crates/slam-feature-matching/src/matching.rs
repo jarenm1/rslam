@@ -16,7 +16,6 @@ pub struct BruteForceHammingMatcher {
 }
 
 impl Matcher for BruteForceHammingMatcher {
-    #[inline]
     fn match_descriptors(
         &self,
         desc1: &BinaryDescriptors,
