@@ -1,34 +1,14 @@
 use super::{BinaryDescriptors, MatchingError};
-use opencv::core::Vector;
-use opencv::prelude::*;
-use opencv::{
-    core::{DMatch, no_array},
-    prelude::DescriptorMatcherTraitConst,
-};
+use opencv::{core::no_array, prelude::DescriptorMatcherTraitConst};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Match {
-    pub query_idx: i32,
-    pub train_idx: i32,
-    pub distance: f32,
-}
-
-impl From<DMatch> for Match {
-    fn from(value: DMatch) -> Self {
-        Self {
-            query_idx: value.query_idx,
-            train_idx: value.train_idx,
-            distance: value.distance,
-        }
-    }
-}
+pub use opencv::core::{DMatch, Vector};
 
 pub trait Matcher {
     fn match_descriptors(
         &self,
         desc1: &BinaryDescriptors,
         desc2: &BinaryDescriptors,
-    ) -> Result<Vec<Vec<Match>>, MatchingError>;
+    ) -> Result<Vector<Vector<DMatch>>, MatchingError>;
 }
 
 pub struct BruteForceHammingMatcher {
@@ -41,27 +21,33 @@ impl Matcher for BruteForceHammingMatcher {
         &self,
         desc1: &BinaryDescriptors,
         desc2: &BinaryDescriptors,
-    ) -> Result<Vec<Vec<Match>>, MatchingError> {
+    ) -> Result<Vector<Vector<DMatch>>, MatchingError> {
         let mut matches = Vector::new();
         self.matcher.knn_train_match(
-            &Mat::try_from(desc1)?,
-            &Mat::try_from(desc2)?,
+            &*desc1.as_mat_view()?,
+            &*desc2.as_mat_view()?,
             &mut matches,
             2,
             &no_array(),
             false,
         )?;
 
-        let matches_vec: Vec<Vec<Match>> = matches
-            .into_iter()
-            .map(|inner| {
-                inner
-                    .into_iter()
-                    .map(|dmatch| dmatch.into())
-                    .collect::<Vec<Match>>()
-            })
-            .collect::<Vec<Vec<Match>>>();
+        Ok(matches)
+    }
+}
 
-        Ok(matches_vec)
+pub enum MatchingModel {
+    BruteForceHamming(BruteForceHammingMatcher),
+}
+
+impl Matcher for MatchingModel {
+    fn match_descriptors(
+        &self,
+        desc1: &BinaryDescriptors,
+        desc2: &BinaryDescriptors,
+    ) -> Result<Vector<Vector<DMatch>>, MatchingError> {
+        match self {
+            MatchingModel::BruteForceHamming(matcher) => matcher.match_descriptors(desc1, desc2),
+        }
     }
 }

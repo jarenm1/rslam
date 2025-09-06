@@ -1,9 +1,12 @@
+use std::{borrow::Cow, marker::PhantomData, ops::Deref};
+
 use opencv::core::{CV_8UC1, Mat, Mat_AUTO_STEP, MatTraitConst};
-
-use crate::matching::Match;
-
 pub mod edge_detection;
+pub mod keyframe;
 pub mod matching;
+
+pub type GrayscaleImage<'a> = MatrixWrapper<'a, GrayscaleImageData>;
+pub type BinaryDescriptors<'a> = MatrixWrapper<'a, BinaryDescriptorsData>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MatchingError {
@@ -15,85 +18,86 @@ pub enum MatchingError {
     InvalidMatType,
 }
 
-pub struct BinaryDescriptors {
-    pub matrix: nalgebra::DMatrix<u8>,
+pub struct MatView<'a> {
+    mat: Mat,
+    _phantom: PhantomData<&'a ()>,
 }
 
-impl<'a> TryFrom<&'a BinaryDescriptors> for Mat {
-    type Error = MatchingError;
-    fn try_from(value: &'a BinaryDescriptors) -> Result<Self, Self::Error> {
-        unsafe {
-            let rows = value.matrix.nrows() as i32;
-            let cols = value.matrix.ncols() as i32;
-
-            let data_ptr = value.matrix.as_slice().as_ptr() as *mut std::ffi::c_void;
-
-            let mat =
-                Mat::new_rows_cols_with_data_unsafe(rows, cols, CV_8UC1, data_ptr, Mat_AUTO_STEP)?;
-
-            Ok(mat)
-        }
+impl<'a> Deref for MatView<'a> {
+    type Target = Mat;
+    fn deref(&self) -> &Self::Target {
+        &self.mat
     }
 }
 
-impl<'a> TryFrom<&'a Mat> for BinaryDescriptors {
-    type Error = MatchingError;
+#[derive(Debug)]
+pub struct MatrixWrapper<'a, T> {
+    rows: usize,
+    cols: usize,
+    data: Cow<'a, [u8]>,
+    _marker: PhantomData<T>,
+}
 
-    fn try_from(mat: &'a Mat) -> Result<Self, Self::Error> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GrayscaleImageData;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BinaryDescriptorsData;
+
+impl<'a, T> MatrixWrapper<'a, T> {
+    pub fn from_mat_borrowed(mat: &'a Mat) -> Result<Self, MatchingError> {
         if !mat.is_continuous() {
             return Err(MatchingError::MatNotContinuous);
         }
-
         if mat.typ() != CV_8UC1 {
             return Err(MatchingError::InvalidMatType);
         }
 
         let rows = mat.rows() as usize;
         let cols = mat.cols() as usize;
-        let total_bytes = mat.total() * mat.elem_size()?;
+        let total_bytes = rows * cols;
 
-        let data_vec: Vec<u8> = unsafe {
+        let data_slice = unsafe {
             let data_ptr = mat.data();
-            let slice = std::slice::from_raw_parts(data_ptr, total_bytes);
-            slice.to_vec()
+            std::slice::from_raw_parts(data_ptr, total_bytes)
         };
 
-        let matrix = nalgebra::DMatrix::from_vec(rows, cols, data_vec);
-
-        Ok(BinaryDescriptors { matrix })
+        Ok(Self {
+            rows,
+            cols,
+            data: Cow::Borrowed(data_slice),
+            _marker: PhantomData,
+        })
     }
-}
 
-pub struct GrayscaleImage {
-    pub matrix: nalgebra::DMatrix<u8>,
-}
-
-impl<'a> TryFrom<&'a GrayscaleImage> for Mat {
-    type Error = MatchingError;
-    fn try_from(value: &'a GrayscaleImage) -> Result<Self, Self::Error> {
-        unsafe {
-            let rows = value.matrix.nrows() as i32;
-            let cols = value.matrix.ncols() as i32;
-
-            let data_ptr = value.matrix.as_slice().as_ptr() as *mut std::ffi::c_void;
-
-            let mat =
-                Mat::new_rows_cols_with_data_unsafe(rows, cols, CV_8UC1, data_ptr, Mat_AUTO_STEP)?;
-
-            Ok(mat)
+    pub fn into_owned(self) -> MatrixWrapper<'static, T>
+    where
+        T: 'static,
+    {
+        MatrixWrapper {
+            rows: self.rows,
+            cols: self.cols,
+            data: Cow::Owned(self.data.into_owned()),
+            _marker: PhantomData,
         }
     }
-}
 
-pub fn filter_matches(matches: Vec<Vec<Match>>, ratio: f32) -> Vec<Vec<Match>> {
+    pub fn as_mat_view<'s>(&'s self) -> Result<MatView<'s>, MatchingError> {
+        let mat_header = unsafe {
+            let data_ptr = self.data.as_ptr() as *mut std::ffi::c_void;
 
-    matches
-        .iter()
-        .filter_map(|m_group| {
-            
-            if let [m, n, ..] = m_group.as_slice() {
-                if m.distance < ratio * n
-            }
+            Mat::new_rows_cols_with_data_unsafe(
+                self.rows as i32,
+                self.cols as i32,
+                CV_8UC1,
+                data_ptr,
+                Mat_AUTO_STEP,
+            )?
+        };
+
+        Ok(MatView {
+            mat: mat_header,
+            _phantom: PhantomData,
         })
-
+    }
 }
