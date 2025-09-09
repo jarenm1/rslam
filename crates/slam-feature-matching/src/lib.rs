@@ -4,10 +4,9 @@ use opencv::core::{CV_8UC1, Mat, MatTraitConst};
 use opencv::prelude::*;
 use tracing::{debug, error, info, trace};
 
-pub mod edge_detection;
+pub mod feature_detection;
 pub mod keyframe;
 pub mod matching;
-
 
 pub type GrayscaleImage<'a> = MatrixWrapper<'a, GrayscaleImageData>;
 pub type BinaryDescriptors<'a> = MatrixWrapper<'a, BinaryDescriptorsData>;
@@ -171,9 +170,7 @@ impl<'a, T> MatrixWrapper<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use opencv::{
-        core::{CV_8UC1, CV_8UC3, Mat, Size},
-    };
+    use opencv::core::{CV_8UC1, CV_8UC3, Mat, Size};
 
     fn init_tracing() -> tracing::subscriber::DefaultGuard {
         let subscriber = tracing_subscriber::FmtSubscriber::builder()

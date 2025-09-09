@@ -1,4 +1,5 @@
 use super::{BinaryDescriptors, GrayscaleImage, MatchingError};
+pub use opencv::features2d::ORB_ScoreType;
 use opencv::{
     core::{KeyPoint, Ptr, Vector, no_array},
     prelude::*,
@@ -17,6 +18,60 @@ pub trait FeatureDetector {
 
 pub struct OrbDetector {
     detector: Ptr<opencv::features2d::ORB>,
+}
+
+pub struct OrbConfig {
+    n_features: i32,
+    scale_factor: f32,
+    nlevels: i32,
+    edge_threshold: i32,
+    first_level: i32,
+    wta_k: i32,
+    score_type: ORB_ScoreType,
+    patch_size: i32,
+    fast_threshold: i32,
+}
+
+impl OrbConfig {
+    pub fn new(
+        n_features: i32,
+        scale_factor: f32,
+        nlevels: i32,
+        edge_threshold: i32,
+        first_level: i32,
+        wta_k: i32,
+        score_type: ORB_ScoreType,
+        patch_size: i32,
+        fast_threshold: i32,
+    ) -> Self {
+        OrbConfig {
+            n_features,
+            scale_factor,
+            nlevels,
+            edge_threshold,
+            first_level,
+            wta_k,
+            score_type,
+            patch_size,
+            fast_threshold,
+        }
+    }
+}
+
+impl Default for OrbConfig {
+    fn default() -> Self {
+        OrbConfig {
+            n_features: 8,
+            scale_factor: 1.2,
+            nlevels: 8,
+            edge_threshold: 31,
+            first_level: 0,
+            wta_k: 2,
+            score_type: ORB_ScoreType::HARRIS_SCORE,
+            patch_size: 31,
+            fast_threshold: 20,
+        }
+    }
 }
 
 impl FeatureDetector for OrbDetector {
@@ -60,20 +115,20 @@ pub enum FeatureDetectorModel {
 }
 
 impl FeatureDetectorModel {
-    pub fn new_orb() -> Result<Self, MatchingError> {
+    pub fn new_orb(config: OrbConfig) -> Result<Self, MatchingError> {
         debug!("Creating new ORB detector with default parameters");
         debug!("ORB params: n_features=500, scale_factor=1.2, n_levels=8, edge_threshold=31");
 
         let orb = opencv::features2d::ORB::create(
-            500,    // n_features: maximum number of features to retain
-            1.2f32, // scale_factor: pyramid decimation ratio
-            8,      // n_levels: number of pyramid levels
-            31,     // edge_threshold: size of border where features are not detected
-            0,      // first_level: level of pyramid to put source image to
-            2, // wta_k: number of points that produce each element of oriented BRIEF descriptor
-            opencv::features2d::ORB_ScoreType::HARRIS_SCORE, // score_type
-            31, // patch_size: size of patch used by oriented BRIEF descriptor
-            20, // fast_threshold: fast threshold
+            config.n_features,
+            config.scale_factor,
+            config.nlevels,
+            config.edge_threshold,
+            config.first_level,
+            config.wta_k,
+            config.score_type,
+            config.patch_size,
+            config.fast_threshold,
         )?;
 
         info!("Successfully created ORB detector");
@@ -110,7 +165,7 @@ mod tests {
         let _guard = init_tracing();
         info!("Starting test_orb_detector_creation");
 
-        let _detector = FeatureDetectorModel::new_orb()?;
+        let _detector = FeatureDetectorModel::new_orb(OrbConfig::default())?;
         info!("ORB detector created successfully");
         Ok(())
     }

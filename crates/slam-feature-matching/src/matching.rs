@@ -128,7 +128,6 @@ mod tests {
 
         let mut mat = unsafe { Mat::new_size(Size::new(descriptor_size, num_features), CV_8UC1)? };
 
-        // Fill with deterministic test data
         for i in 0..num_features {
             for j in 0..descriptor_size {
                 let value = ((i * descriptor_size + j) % 256) as u8;
@@ -178,7 +177,6 @@ mod tests {
 
         let matches = matcher.match_descriptors(&desc1, &desc2)?;
 
-        // Should have matches for each descriptor in desc1
         assert_eq!(matches.len(), 5, "Wrong number of match groups");
 
         // Each match group should have k=2 matches (we use knn with k=2)
@@ -200,10 +198,8 @@ mod tests {
 
         let matches = matcher.match_descriptors(&desc1, &desc2)?;
 
-        // Should have perfect matches
         assert_eq!(matches.len(), 3);
 
-        // First match in each group should have distance 0 (identical descriptors)
         for i in 0..matches.len() {
             let match_group = matches.get(i)?;
             if match_group.len() > 0 {
@@ -224,11 +220,9 @@ mod tests {
     fn test_no_matches_different_descriptors() -> Result<(), Box<dyn std::error::Error>> {
         let matcher = MatchingModel::new_brute_force_hamming()?;
 
-        // Create completely different descriptors
         let desc1_mat = create_test_descriptors(3, 32)?;
         let mut desc2_mat = create_test_descriptors(3, 32)?;
 
-        // Make desc2 completely different by inverting all bits
         for i in 0..desc2_mat.rows() {
             for j in 0..desc2_mat.cols() {
                 let original_val = *desc1_mat.at_2d::<u8>(i, j)?;
@@ -241,14 +235,12 @@ mod tests {
 
         let matches = matcher.match_descriptors(&desc1, &desc2)?;
 
-        // Should still get matches (brute force will find best available), but distances should be high
         assert_eq!(matches.len(), 3);
 
         for i in 0..matches.len() {
             let match_group = matches.get(i)?;
             if match_group.len() > 0 {
                 let best_match = match_group.get(0)?;
-                // Distance should be high for completely different descriptors
                 assert!(
                     best_match.distance > 100.0,
                     "Expected high distance for different descriptors"
@@ -272,14 +264,12 @@ mod tests {
         let matches = matcher.match_descriptors(&desc1, &desc2)?;
         let filtered_matches = filter_matches(&matches, 0.7);
 
-        // Should have some good matches after filtering
         assert!(filtered_matches.len() > 0, "No matches passed the filter");
         assert!(
             filtered_matches.len() <= matches.len(),
             "Filtered matches exceed original count"
         );
 
-        // All filtered matches should have reasonable distances
         for i in 0..filtered_matches.len() {
             let match_obj = filtered_matches.get(i)?;
             assert!(match_obj.distance >= 0.0, "Negative match distance");
@@ -322,10 +312,8 @@ mod tests {
             let desc2 = BinaryDescriptors::from_mat_borrowed(&desc2_mat)?.into_owned();
 
             (desc1, desc2)
-            // Original mats are dropped here
         };
 
-        // Should still be able to match with owned descriptors
         let matches = matcher.match_descriptors(&desc1_owned, &desc2_owned)?;
         assert_eq!(matches.len(), 5);
 
@@ -350,7 +338,6 @@ mod tests {
                 let first_match = match_group.get(0)?;
                 let second_match = match_group.get(1)?;
 
-                // First match should always have better (lower) distance than second
                 assert!(
                     first_match.distance <= second_match.distance,
                     "Matches not sorted by distance: {} > {}",
@@ -358,7 +345,6 @@ mod tests {
                     second_match.distance
                 );
 
-                // Distances should be non-negative
                 assert!(
                     first_match.distance >= 0.0,
                     "Negative distance in first match"
