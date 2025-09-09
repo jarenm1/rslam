@@ -1,5 +1,4 @@
 
-
 pub struct SlamSystem {
     camera_intrinsics: CameraIntrinsics,
 }
@@ -9,5 +8,4 @@ pub struct CameraIntrinsics {
     fy: usize,
     cx: usize,
     cy: usize,
-    
 }

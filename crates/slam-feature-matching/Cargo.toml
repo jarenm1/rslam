@@ -7,3 +7,5 @@ edition = "2024"
 opencv = { version = "0.95.1", features = ["features2d"] }
 thiserror = "2.0.16"
 nalgebra = "0.34.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
