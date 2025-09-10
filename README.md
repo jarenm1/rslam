@@ -1,10 +1,7 @@
 # MDE Visual SLAM
 
-
 ![GitHub last commit](https://img.shields.io/github/last-commit/jarenm1/rslam)
 [![Crates.io](https://img.shields.io/crates/v/rslam.svg)](https://crates.io/crates/rslam)
-
----
 
 ## Current Features
 
@@ -24,3 +21,7 @@
 - Relocalization
 - MDE for dense points
 - Bevy Gaussian splatting visulization w/ Bevy plugin
+
+---
+
+MIT License
