@@ -8,7 +8,7 @@
 | Feature | Status | Notes |
 |---|---|---|
 | Core SLAM System | 🚧 WIP | Basic SLAM structure & modules |
-| Feature Detection | ✅ Complete | ORB feature detection |
+| Feature Detection | 🚧 WIP | ML based feature extraction, with custom meta learning model distilled from DINOv3. |
 | Feature Matching | ✅ Complete | BFMatching |
 | Keyframe Management | 🚧 WIP | Management of keyframes is being developed |
 | ROS Integration | 🚧 WIP | A ROS node is created to subscribe to raw camera feed |
